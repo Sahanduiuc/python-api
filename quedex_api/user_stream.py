@@ -150,6 +150,37 @@ class UserStreamListener(object):
     """
     pass
 
+  def on_internal_transfer_executed(self, internal_transfer_executed):
+    """
+    :param internal_transfer_executed: a dict of the following format:
+      {
+        "destination_account_id": "<positive integer id of the destination account>,
+        "amount": "<decimal in BTC as string>",
+      }
+    """
+    pass
+
+  def on_internal_transfer_rejected(self, internal_transfer_rejected):
+    """
+    :param internal_transfer_rejected: a dict of the following format:
+      {
+        "destination_account_id": "<positive integer id of the destination account>,
+        "amount": "<decimal in BTC as string>",
+        "cause": "forbidden"/"insufficient_funds",
+      }
+    """
+    pass
+
+  def on_internal_transfer_received(self, internal_transfer_received):
+    """
+    :param internal_transfer_received: a dict of the following format:
+      {
+        "source_account_id": "<positive integer id of the account that sent the transfer>,
+        "amount": "<decimal in BTC as string>",
+      }
+    """
+    pass
+
   def on_error(self, error):
     """
     Called when an error with market stream occurs (data parsing, signature verification, webosocket
@@ -332,6 +363,20 @@ class UserStream(object):
     self._batch = None
     self._batching = False
 
+  def execute_internal_transfer(self, internal_transfer_command):
+    """
+    :param internal_transfer_command: a dict of the following format:
+      {
+        "destination_account_id": <positive integer id of the destination account>,
+        "amount": "<decimal in BTC as string>",
+      }
+    """
+    self._check_if_initialized()
+    check_internal_transfer(internal_transfer_command)
+    internal_transfer_command['type'] = 'internal_transfer'
+    self._set_nonce_account_id(internal_transfer_command)
+    self._encrypt_send(internal_transfer_command)
+
   def _send_batch_no_checks(self, order_commands):
     self._encrypt_send({
       'type': 'batch',
@@ -445,8 +490,15 @@ def check_modify_order(modify_order):
   if 'new_limit_price' not in modify_order and 'new_quantity' not in modify_order:
     raise ValueError('modify_order should have new_limit_price or new_quantity')
 
+
 def check_cancel_all_orders(cancel_all_orders):
   pass
+
+
+def check_internal_transfer(internal_transfer):
+  check_positive_int(internal_transfer, 'destination_account_id')
+  check_positive_decimal(internal_transfer, 'amount')
+
 
 def check_positive_decimal(_dict, field_name):
   number = _dict[field_name]
