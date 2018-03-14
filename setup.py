@@ -10,5 +10,7 @@ setup(
     'twisted==17.5.0',
     'pyOpenSSL==17.1.0',
     'pgpy==0.4.2',
+    'six==1.10.0',
+    'cryptography==2.0.3',
   ],
 )
